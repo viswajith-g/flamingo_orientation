@@ -3,7 +3,7 @@
 * Desc: Get the orientation of the user in 3D space using the BNO055 module and transmit it via BLE
 * Date: 11/30/2022
 * Author: Viswajith Govinda Rajan
-* Ver 1.0
+* Ver 2.0
 **************************************************************************************************************************/
 
 #include <Wire.h>
@@ -16,7 +16,7 @@
 
 // // BLE Service
 // BLEDfu  bledfu;  // OTA DFU service
-// BLEDis  bledis;  // device information
+   BLEDis  bledis;  // device information
 // BLEUart bleuart; // uart over ble
 // BLEBas  blebas;  // battery
 
@@ -24,14 +24,21 @@
 #define MAX_PRPH_CONNECTION   1
 // uint8_t connection_count = 0;
 
+/* Flamingo Orientation Service
+   BNO055 Service: 00000000-A154-EFDE-0000-0000A1540000
+   BNO055 Orient : 00000001-A154-0000-0000-0000A1540001
+ */
+
 const uint8_t BNO055_UUID_SERVICE[] =
 {
-  0x54, 0xA1
+  0x00, 0x00, 0x54, 0xA1, 0x5F, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x54, 0xA1, 0x00, 0x00, 0x00, 0x00
 };
 
 const uint8_t BNO055_UUID_CHR_ORIENTATION[] =
 {
-  0x54, 0xA1
+  0x01, 0x00, 0x54, 0xA1, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x54, 0xA1, 0x01, 0x00, 0x00, 0x00
 };
 
 
@@ -44,6 +51,7 @@ struct message {
   uint16_t y = 0;   // y value  
   uint16_t z = 0;   // z value  
 }packet;
+char direction[3];
 
 Adafruit_BNO055 bno = Adafruit_BNO055(55);    //initialize I2C communication with BNO055 sensor
 
@@ -78,6 +86,10 @@ void setup(void)
   Bluefruit.Periph.setDisconnectCallback(disconnect_callback);
 
   bno_init();   //init BNO sensor
+
+  bledis.setManufacturer("Sparkfun");
+  bledis.setModel("Flamingo D2");
+  bledis.begin();
 
   // Note: You must call .begin() on the BLEService before calling .begin() on
   // any characteristic(s) within that service definition.. Calling .begin() on
@@ -146,24 +158,57 @@ void bno_init(){
 }
 
 void sensor_reading(){
-  sensors_event_t event;  // create a sensor event instance
-  bno.getEvent(&event);   // get sensor readings for that instance via I2C from the BNO module
+  // sensors_event_t event;  // create a sensor event instance
+  // bno.getEvent(&event);   // get sensor readings for that instance via I2C from the BNO module
 
-  //imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+  imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
 
-//  packet.x = (euler.x());
-//  packet.y = (euler.y());
-//  packet.z = (euler.z());
 
- packet.x = (event.orientation.x);
+ uint16_t x_angle = euler.x();
+ if (x_angle >= 0 and x_angle < 45){
+   strcpy(direction, "N");
+ }
+ else if (x_angle >= 45 and x_angle < 90) {
+   strcpy(direction, "NE");
+ }
+ else if (x_angle >= 90 and x_angle < 135) {
+   strcpy(direction, "E");
+ }
+ else if (x_angle >= 135 and x_angle < 180) {
+    strcpy(direction, "SE");
+ }
+ else if (x_angle >= 180 and x_angle < 225) {
+    strcpy(direction, "S");
+ }
+ else if (x_angle >= 225 and x_angle < 270) {
+    strcpy(direction, "SW");
+ }
+ else if (x_angle >= 270 and x_angle < 315) {
+   strcpy(direction, "W");
+ }
+ else if (x_angle >= 315 and x_angle < 360) {
+   strcpy(direction, "NW");
+ }
  Serial.print("X: ");
  Serial.println(packet.x); 
- packet.y = (event.orientation.y);
+ Serial.print("Direction: ");
+ Serial.println(direction);
+ packet.y = (euler.y());
  Serial.print("Y: ");
  Serial.println(packet.y);
- packet.z = (event.orientation.z);
+ packet.z = (euler.z());
  Serial.print("Z: ");
  Serial.println(packet.z);
+
+//  packet.x = (event.orientation.x);
+//  Serial.print("X: ");
+//  Serial.println(packet.x); 
+//  packet.y = (event.orientation.y);
+//  Serial.print("Y: ");
+//  Serial.println(packet.y);
+//  packet.z = (event.orientation.z);
+//  Serial.print("Z: ");
+//  Serial.println(packet.z);
 
 }
 
@@ -202,7 +247,8 @@ void loop(void)
   {
     // Delay to wait for enough input, since we have a limited transmission buffer
     sensor_reading();
-    bnoReading.write((uint16_t *)&packet, sizeof(packet));
+    // bnoReading.write((uint16_t *)&packet, sizeof(packet));
+    bnoReading.write(direction);
     Serial.println("packet transmitted");    
     delay(1000);
   }
