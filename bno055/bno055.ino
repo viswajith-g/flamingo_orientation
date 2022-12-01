@@ -15,7 +15,7 @@
 #include <InternalFileSystem.h>
 
 // // BLE Service
-// BLEDfu  bledfu;  // OTA DFU service
+   //BLEDfu  bledfu;  // OTA DFU service
    BLEDis  bledis;  // device information
 // BLEUart bleuart; // uart over ble
 // BLEBas  blebas;  // battery
@@ -85,10 +85,13 @@ void setup(void)
   Bluefruit.Periph.setConnectCallback(connect_callback);
   Bluefruit.Periph.setDisconnectCallback(disconnect_callback);
 
+  // To be consistent OTA DFU should be added first if it exists
+  // bledfu.begin();
+
   bno_init();   //init BNO sensor
 
   bledis.setManufacturer("Sparkfun");
-  bledis.setModel("Flamingo D2");
+  bledis.setModel("Flamingo D4");
   bledis.begin();
 
   // Note: You must call .begin() on the BLEService before calling .begin() on
@@ -105,7 +108,7 @@ void setup(void)
   bnoReading.setPermission(SECMODE_OPEN, SECMODE_NO_ACCESS);
   bnoReading.setMaxLen(20);
   bnoReading.begin();
-  bnoReading.write((uint16_t *)&packet, sizeof(packet));
+  // bnoReading.write((uint16_t *)&packet, sizeof(packet));
 
   // Set up and start advertising
   startAdv();
