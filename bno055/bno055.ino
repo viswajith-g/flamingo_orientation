@@ -47,11 +47,12 @@ BLECharacteristic bnoReading(BNO055_UUID_CHR_ORIENTATION);        // Characteris
 
 //Struct to hold the sensor readings to be sent via BLE
 struct message {
-  uint16_t x = 0;   // x value
-  uint16_t y = 0;   // y value  
-  uint16_t z = 0;   // z value  
+   uint16_t x = 0;   // x value
+   uint16_t y = 0;   // y value  
+   uint16_t z = 0;   // z value  
 }packet;
 char direction[3];
+ 
 
 Adafruit_BNO055 bno = Adafruit_BNO055(55);    //initialize I2C communication with BNO055 sensor
 
@@ -91,7 +92,7 @@ void setup(void)
   bno_init();   //init BNO sensor
 
   bledis.setManufacturer("Sparkfun");
-  bledis.setModel("Flamingo D4");
+  bledis.setModel("Flamingo D3");
   bledis.begin();
 
   // Note: You must call .begin() on the BLEService before calling .begin() on
@@ -166,50 +167,83 @@ void sensor_reading(){
 
   imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
 
+// imu::Quaternion quat = bno.getQuat();
+// Serial.println(quat.w());
+// Serial.println(quat.w());
+// Serial.println(quat.w());
+// Serial.println(quat.w());
 
- uint16_t x_angle = euler.x();
- if (x_angle >= 0 and x_angle < 45){
-   strcpy(direction, "N");
- }
- else if (x_angle >= 45 and x_angle < 90) {
-   strcpy(direction, "NE");
- }
- else if (x_angle >= 90 and x_angle < 135) {
-   strcpy(direction, "E");
- }
- else if (x_angle >= 135 and x_angle < 180) {
-    strcpy(direction, "SE");
- }
- else if (x_angle >= 180 and x_angle < 225) {
-    strcpy(direction, "S");
- }
- else if (x_angle >= 225 and x_angle < 270) {
-    strcpy(direction, "SW");
- }
- else if (x_angle >= 270 and x_angle < 315) {
-   strcpy(direction, "W");
- }
- else if (x_angle >= 315 and x_angle < 360) {
-   strcpy(direction, "NW");
- }
+
+// imu::Quaternion quat = bno.getQuat();
+// imu::Vector<3> eul = quat.toEuler();
+// //eul.toDegrees();
+
+// double yaw = eul.x();
+// double pitch = eul.y();
+// double roll = eul.z();
+// Serial.print("yaw: " );
+// Serial.println(yaw);
+// Serial.print("pitch: " );
+// Serial.println(pitch);
+// Serial.print("roll: " );
+// Serial.println(roll);
+  
+//  uint16_t x_angle;x_angle = euler.x();
+//  if (x_angle >= 0 and x_angle < 45){
+//    strcpy(direction, "N");
+//  }
+//  else if (x_angle >= 45 and x_angle < 90) {
+//    strcpy(direction, "NE");
+//  }
+//  else if (x_angle >= 90 and x_angle < 135) {
+//    strcpy(direction, "E");
+//  }
+//  else if (x_angle >= 135 and x_angle < 180) {
+//     strcpy(direction, "SE");
+//  }
+//  else if (x_angle >= 180 and x_angle < 225) {
+//     strcpy(direction, "S");
+//  }
+//  else if (x_angle >= 225 and x_angle < 270) {
+//     strcpy(direction, "SW");
+//  }
+//  else if (x_angle >= 270 and x_angle < 315) {
+//    strcpy(direction, "W");
+//  }
+//  else if (x_angle >= 315 and x_angle < 360) {
+//    strcpy(direction, "NW");
+//  }
+ Serial.print("Xs: ");
+ Serial.println(euler.x()); 
+ packet.x = euler.x();
  Serial.print("X: ");
  Serial.println(packet.x); 
- Serial.print("Direction: ");
- Serial.println(direction);
- packet.y = (euler.y());
+//  Serial.print("Direction: ");
+//  Serial.println(direction);
+ Serial.print("Ys: ");
+ Serial.println(euler.y()); 
+ packet.y = euler.y() + 180; //not using these for now
  Serial.print("Y: ");
  Serial.println(packet.y);
- packet.z = (euler.z());
+ Serial.print("Zs: ");
+ Serial.println(euler.z()); 
+ packet.z = euler.z() + 180;
  Serial.print("Z: ");
  Serial.println(packet.z);
 
 //  packet.x = (event.orientation.x);
+//  Serial.print("Xs: ");
+//  Serial.println(event.orientation.x); 
 //  Serial.print("X: ");
 //  Serial.println(packet.x); 
-//  packet.y = (event.orientation.y);
+//  Serial.print("Ys: ");
+//  Serial.println(event.orientation.y); 
+//  packet.y = (event.orientation.y + 180);
 //  Serial.print("Y: ");
 //  Serial.println(packet.y);
-//  packet.z = (event.orientation.z);
+//  Serial.print("Zs: ");
+//  Serial.println(event.orientation.z); 
+//  packet.z = (event.orientation.z + 180);
 //  Serial.print("Z: ");
 //  Serial.println(packet.z);
 
@@ -250,8 +284,8 @@ void loop(void)
   {
     // Delay to wait for enough input, since we have a limited transmission buffer
     sensor_reading();
-    // bnoReading.write((uint16_t *)&packet, sizeof(packet));
-    bnoReading.write(direction);
+    bnoReading.write((uint16_t *)&packet, sizeof(packet));
+    // bnoReading.write(direction);
     Serial.println("packet transmitted");    
     delay(1000);
   }
